@@ -1,0 +1,26 @@
+=======
+CHANGES
+=======
+
+1.0.3 (unreleased)
+------------------
+
+- Initial release on pypi.
+
+
+1.0.2 (2012-03-19)
+------------------
+
+- Nothing changed yet.
+
+
+1.0.1 (2012-03-13)
+------------------
+
+- Added SessionCredentials
+
+
+1.0.0 (2012-03-13)
+------------------
+
+- Initial release as a separate package.
