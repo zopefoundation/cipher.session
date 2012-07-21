@@ -65,6 +65,7 @@ setup(
         'zope.interface',
         'zope.component',
         'zope.session',
+        'zope.location',
         'zope.publisher',
         'repoze.session',
 

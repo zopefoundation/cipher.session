@@ -7,6 +7,8 @@ CHANGES
 
 - Now really get rid of ISessionDataContainer on bootstrap.
 
+- Added Location to SessionDataManager to avoid having a LocationProxy around it
+
 
 1.0.3 (2012-04-05)
 ------------------

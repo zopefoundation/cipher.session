@@ -22,6 +22,7 @@ import zope.component
 from persistent import Persistent
 from persistent.mapping import PersistentMapping
 from ZODB.POSException import ConflictError
+from zope.location.location import Location
 from zope.publisher.interfaces import IRequest
 from zope.session.interfaces import ISession
 from zope.session.interfaces import IClientId
@@ -121,7 +122,7 @@ class SessionData(data.SessionData):
         return resolved
 
 
-class SessionDataManager(manager.SessionDataManager):
+class SessionDataManager(manager.SessionDataManager, Location):
 
     zope.interface.implements(interfaces.ISessionDataManager)
 
