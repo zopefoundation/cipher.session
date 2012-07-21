@@ -22,7 +22,7 @@ def read(*rnames):
 
 setup(
     name='cipher.session',
-    version='1.0.4.dev0',
+    version='1.0.4',
     url="http://pypi.python.org/pypi/cipher.session/",
     author='Zope Foundation and Contributors',
     author_email='zope-dev@zope.org',
