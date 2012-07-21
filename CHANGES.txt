@@ -5,7 +5,7 @@ CHANGES
 1.0.4 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Now really get rid of ISessionDataContainer on bootstrap.
 
 
 1.0.3 (2012-04-05)
