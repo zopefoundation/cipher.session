@@ -1,7 +1,7 @@
 """ Unit tests for AppendOnlyDict taken from Products.faster.appendict
 """
 import unittest
-
+from cipher.session._compat import PY3
 
 class ApppendOnlyDictTests(unittest.TestCase):
 
@@ -43,7 +43,8 @@ class ApppendOnlyDictTests(unittest.TestCase):
         class Mutable:
             pass
         mutable = Mutable()
-        self.assertRaises(TypeError, aod.__setitem__, 'somekey', mutable)
+        if not PY3:
+            self.assertRaises(TypeError, aod.__setitem__, 'somekey', mutable)
 
     def test___delitem__existing_key_raises_TypeError(self):
         aod = self._makeOne()

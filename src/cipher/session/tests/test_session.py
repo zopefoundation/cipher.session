@@ -3,7 +3,7 @@
 from pprint import pprint
 import doctest
 import zope.component
-from zope.app.testing import setup
+import zope.component.testing
 from zope.publisher.browser import TestRequest
 from zope.publisher.interfaces import IRequest
 from zope.session.http import CookieClientIdManager
@@ -14,8 +14,8 @@ from cipher.session import interfaces
 from cipher.session import session
 
 
+@zope.interface.implementer(IClientId)
 class ClientIdStub(object):
-    zope.interface.implements(IClientId)
     zope.component.adapts(IRequest)
 
     def __init__(self, request):
@@ -29,8 +29,8 @@ class SessionDataStub(dict):
     pass
 
 
+@zope.interface.implementer(interfaces.ISessionDataManager)
 class SessionDataManagerStub(object):
-    zope.interface.implements(interfaces.ISessionDataManager)
 
     def __init__(self):
         self._data = {}
@@ -137,14 +137,13 @@ def doctest_SessionDataManager():
 
 
 def setUp(test):
-    setup.placelessSetUp()
+    zope.component.testing.setUp(test)
     zope.component.provideAdapter(ClientIdStub)
-    #zope.component.provideAdapter(ClientId, (IRequest,), IClientId)
     zope.component.provideUtility(CookieClientIdManager(), IClientIdManager)
 
 
 def tearDown(test):
-    setup.placelessTearDown()
+    zope.component.testing.tearDown(test)
 
 
 def test_suite():

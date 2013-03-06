@@ -13,9 +13,7 @@
 ##############################################################################
 """Session handling
 """
-
 import pprint
-from types import InstanceType
 
 import zope.interface
 import zope.component
@@ -31,6 +29,7 @@ from repoze.session import data
 from repoze.session import manager
 
 from cipher.session import interfaces
+from cipher.session._compat import PY3
 
 
 class AppendOnlyDict(PersistentMapping):
@@ -40,9 +39,12 @@ class AppendOnlyDict(PersistentMapping):
             raise TypeError("Can't update key in AppendOnlyDict!")
         if isinstance(value, (dict, list)):
             raise TypeError("Can't add non-persistent mutable subobjects!")
-        if type(value) is InstanceType:
-            if not isinstance(value, Persistent):
-                raise TypeError("Can't add non-persistent mutable subobjects!")
+        if not PY3:
+            from types import InstanceType
+            if type(value) is InstanceType:
+                if not isinstance(value, Persistent):
+                    raise TypeError(
+                        "Can't add non-persistent mutable subobjects!")
         PersistentMapping.__setitem__(self, key, value)
 
     def __delitem__(self, key):
@@ -122,9 +124,8 @@ class SessionData(data.SessionData):
         return resolved
 
 
+@zope.interface.implementer(interfaces.ISessionDataManager)
 class SessionDataManager(manager.SessionDataManager, Location):
-
-    zope.interface.implements(interfaces.ISessionDataManager)
 
     # We have the option of using an OOBTree as a bucket type or an
     # AppendOnlyDict as a bucket type.  With an AppendDict in place,
@@ -149,9 +150,9 @@ class SessionDataManager(manager.SessionDataManager, Location):
         return self.get(key)
 
 
+@zope.interface.implementer(ISession)
 class Session(object):
     """See zope.session.interfaces.ISession"""
-    zope.interface.implements(ISession)
     zope.component.adapts(IRequest)
 
     def __init__(self, request):

@@ -83,8 +83,8 @@ class TestSessionData(unittest.TestCase):
         from ZODB.POSException import ConflictError
         from ZODB.ConflictResolution import PersistentReference
 
-        ref1 = PersistentReference('my_oid')
-        ref2 = PersistentReference(('another_oid', 'my_class'))
+        ref1 = PersistentReference(b'my_oid')
+        ref2 = PersistentReference((b'another_oid', 'my_class'))
 
         sdo = self._makeOne()
         old = {}
