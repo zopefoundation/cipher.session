@@ -60,23 +60,28 @@ class AppendOnlyDict(PersistentMapping):
         o Raise ConflictError if deltas from old to old->committed collide
           with those from old->new.
         """
-        if not committed or not new:
+        # _p_resolveConflict is called with persistent state
+        # we are operating against the PersistentMapping.__getstate__
+        # representation, which aliases '_container' to self.data.
+        if not committed['data'] or not new['data']:
             raise ConflictError("Can't resolve 'clear'")
 
         result = old.copy()
         c_new = {}
+        result_data = result['data']
+        old_data = old['data']
 
-        for k, v in committed.items():
-            if k not in result:
+        for k, v in committed['data'].items():
+            if k not in result_data:
                 c_new[k] = 1
-                result[k] = v
+                result_data[k] = v
 
-        for k, v in new.items():
-            if k in old:
-                continue
+        for k, v in new['data'].items():
             if k in c_new:
                 raise ConflictError("Conflicting insert")
-            result[k] = v
+            if k in old_data:
+                continue
+            result_data[k] = v
 
         return result
 

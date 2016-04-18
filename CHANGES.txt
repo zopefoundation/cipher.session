@@ -5,7 +5,8 @@ CHANGES
 2.0.0a2 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- HUGE BUG fixed: ``AppendOnlyDict._p_resolveConflict`` was badly operating on
+  obj. instance attributes instead of ``__getstate__`` representation
 
 
 2.0.0a1 (2013-03-06)

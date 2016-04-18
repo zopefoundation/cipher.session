@@ -51,8 +51,17 @@ class ApppendOnlyDictTests(unittest.TestCase):
         aod['somekey'] = 'somevalue'
         self.assertRaises(TypeError, aod.__delitem__, 'somekey')
 
+    def _call_p_resolveConflict(self, old, committed, new):
+        aod = self._makeOne()
+        # _p_resolveConflict must be called with persistent state
+        resolved = aod._p_resolveConflict(old.__getstate__(),
+                                          committed.__getstate__(),
+                                          new.__getstate__())
+        # and the return value is ALSO persistent state
+        return resolved
+
     def test__p_resolveConflict_wo_collistions(self):
-        old = {'a': 'A', 'b': 'B'}
+        old = self._makeOne({'a': 'A', 'b': 'B'})
         committed = old.copy()
         committed['c'] = 'C'
         new = old.copy()
@@ -62,49 +71,45 @@ class ApppendOnlyDictTests(unittest.TestCase):
         merged.update(committed)
         merged.update(new)
 
-        aod = self._makeOne()
-        resolved = aod._p_resolveConflict(old, committed, new)
-        self.assertEqual(resolved, merged)
+        resolved = self._call_p_resolveConflict(old, committed, new)
+        self.assertEqual(resolved, merged.__getstate__())
 
     def test__p_resolveConflict_with_committed_clear(self):
         from ZODB.POSException import ConflictError
 
-        old = {'a': 'A', 'b': 'B'}
-        committed = {}
+        old = self._makeOne({'a': 'A', 'b': 'B'})
+        committed = self._makeOne({})
         new = old.copy()
         new['c'] = 'C'
         new['d'] = 'D'
 
-        aod = self._makeOne()
-        self.assertRaises(ConflictError,
-                          aod._p_resolveConflict, old, committed, new)
+        with self.assertRaises(ConflictError):
+            self._call_p_resolveConflict(old, committed, new)
 
     def test__p_resolveConflict_with_new_clear(self):
         from ZODB.POSException import ConflictError
 
-        old = {'a': 'A', 'b': 'B'}
+        old = self._makeOne({'a': 'A', 'b': 'B'})
         committed = old.copy()
         committed['c'] = 'C'
         committed['d'] = 'D'
-        new = {}
+        new = self._makeOne({})
 
-        aod = self._makeOne()
-        self.assertRaises(ConflictError,
-                          aod._p_resolveConflict, old, committed, new)
+        with self.assertRaises(ConflictError):
+            self._call_p_resolveConflict(old, committed, new)
 
-    def test__p_resolveConflict_with_collistions(self):
+    def test__p_resolveConflict_with_collisions(self):
         from ZODB.POSException import ConflictError
 
-        old = {'a': 'A', 'b': 'B'}
+        old = self._makeOne({'a': 'A', 'b': 'B'})
         committed = old.copy()
         committed['c'] = 'C'
         new = old.copy()
         new['c'] = 'ccc'
         new['d'] = 'D'
-        aod = self._makeOne()
 
-        self.assertRaises(ConflictError,
-                          aod._p_resolveConflict, old, committed, new)
+        with self.assertRaises(ConflictError):
+            self._call_p_resolveConflict(old, committed, new)
 
 
 def test_suite():
