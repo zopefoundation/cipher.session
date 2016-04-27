@@ -13,6 +13,7 @@
 ##############################################################################
 """Session handling
 """
+import logging
 import pprint
 
 import zope.interface
@@ -30,6 +31,8 @@ from repoze.session import manager
 
 from cipher.session import interfaces
 from cipher.session._compat import PY3
+
+LOG = logging.getLogger('cipher.session.session')
 
 
 class AppendOnlyDict(PersistentMapping):
@@ -64,6 +67,7 @@ class AppendOnlyDict(PersistentMapping):
         # we are operating against the PersistentMapping.__getstate__
         # representation, which aliases '_container' to self.data.
         if not committed['data'] or not new['data']:
+            LOG.error("Can't resolve 'clear'")
             raise ConflictError("Can't resolve 'clear'")
 
         result = old.copy()
@@ -78,6 +82,7 @@ class AppendOnlyDict(PersistentMapping):
 
         for k, v in new['data'].items():
             if k in c_new:
+                LOG.error("Conflicting insert")
                 raise ConflictError("Conflicting insert")
             if k in old_data:
                 continue
@@ -119,6 +124,7 @@ class SessionData(data.SessionData):
                 msg = "Competing writes to session data: \n%s\n----\n%s" % (
                         pprint.pformat(cd),
                         pprint.pformat(nd))
+                LOG.error(msg)
                 raise ConflictError(msg)
 
         resolved = dict(new)
