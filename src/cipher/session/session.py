@@ -67,7 +67,7 @@ class AppendOnlyDict(PersistentMapping):
         # we are operating against the PersistentMapping.__getstate__
         # representation, which aliases '_container' to self.data.
         if not committed['data'] or not new['data']:
-            LOG.error("Can't resolve 'clear'")
+            LOG.exception("Can't resolve 'clear'")
             raise ConflictError("Can't resolve 'clear'")
 
         result = old.copy()
@@ -82,7 +82,7 @@ class AppendOnlyDict(PersistentMapping):
 
         for k, v in new['data'].items():
             if k in c_new:
-                LOG.error("Conflicting insert")
+                LOG.exception("Conflicting insert")
                 raise ConflictError("Conflicting insert")
             if k in old_data:
                 continue
@@ -124,7 +124,7 @@ class SessionData(data.SessionData):
                 msg = "Competing writes to session data: \n%s\n----\n%s" % (
                         pprint.pformat(cd),
                         pprint.pformat(nd))
-                LOG.error(msg)
+                LOG.exception(msg)
                 raise ConflictError(msg)
 
         resolved = dict(new)
