@@ -96,25 +96,16 @@ class SessionData(data.SessionData):
     # ZODB conflict resolution (to prevent write conflicts)
     # parts/inspiration taken from repoze.session
 
-    def _getData(self, state):
-        # happens that PersistentMapping was refactored to 'data' instead
-        # of '_container', be forgiving about which item we use
-        try:
-            return state['_container']
-        except KeyError:
-            return state['data']
-
     def _p_resolveConflict(self, old, committed, new):
         # dict modifiers set '_lm'.
         if committed['_lm'] != new['_lm']:
             # we are operating against the PersistentMapping.__getstate__
-            # representation, which aliases '_container' to self.data.
 
             # for this to work perfectly, you better put comparable items
             # into the session
             # if they don't compare naturally, add a __cmp__ method
-            cd = self._getData(committed)
-            nd = self._getData(new)
+            cd = committed['data']
+            nd = new['data']
 
             try:
                 neq = (cd != nd)
