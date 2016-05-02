@@ -14,4 +14,4 @@ tags
 coverage
 coverage.xml
 htmlcov/
-
+.eggs
