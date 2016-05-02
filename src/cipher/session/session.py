@@ -96,29 +96,31 @@ class SessionData(data.SessionData):
     # ZODB conflict resolution (to prevent write conflicts)
     # parts/inspiration taken from repoze.session
 
+    def _internalResolveConflict(self, resolved, old, committed, new):
+        msg = "Competing writes to session data: \n%s\n----\n%s" % (
+            pprint.pformat(committed['data']),
+            pprint.pformat(new['data']))
+        LOG.exception(msg)
+        raise ConflictError(msg)
+
     def _p_resolveConflict(self, old, committed, new):
         # dict modifiers set '_lm'.
+        resolved = dict(new)
         if committed['_lm'] != new['_lm']:
             # we are operating against the PersistentMapping.__getstate__
 
             # for this to work perfectly, you better put comparable items
             # into the session
             # if they don't compare naturally, add a __cmp__ method
-            cd = committed['data']
-            nd = new['data']
-
             try:
-                neq = (cd != nd)
+                neq = (committed['data'] != new['data'])
             except ValueError:
                 neq = True
             if neq:
-                msg = "Competing writes to session data: \n%s\n----\n%s" % (
-                        pprint.pformat(cd),
-                        pprint.pformat(nd))
-                LOG.exception(msg)
-                raise ConflictError(msg)
+                # if it's a real conflict, raise ConflictError
+                # otherwise update the resolved dict with good values
+                self._internalResolveConflict(resolved, old, committed, new)
 
-        resolved = dict(new)
         invalid = committed.get('_iv') or new.get('_iv')
         if invalid:
             resolved['_iv'] = True
