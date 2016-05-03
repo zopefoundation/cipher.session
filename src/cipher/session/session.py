@@ -82,7 +82,10 @@ class AppendOnlyDict(PersistentMapping):
 
         for k, v in new['data'].items():
             if k in c_new:
-                LOG.exception("Conflicting insert")
+                rows = ["Conflicting insert"]
+                for data in (old, committed, new, k, v, c_new):
+                    rows.append(pprint.pformat(data))
+                LOG.exception('\n----\n'.join(rows))
                 raise ConflictError("Conflicting insert")
             if k in old_data:
                 continue
