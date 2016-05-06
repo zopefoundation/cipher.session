@@ -35,6 +35,14 @@ from cipher.session._compat import PY3
 LOG = logging.getLogger('cipher.session.session')
 
 
+def formatData(inData):
+    log_rows = []
+    for name, data in sorted(inData.items()):
+        log_rows.append(name)
+        log_rows.append(pprint.pformat(data))
+    return log_rows
+
+
 class AppendOnlyDict(PersistentMapping):
     # taken from Products.faster.appendict by Tres Seaver
     def __setitem__(self, key, value):
@@ -62,6 +70,8 @@ class AppendOnlyDict(PersistentMapping):
 
         o Raise ConflictError if deltas from old to old->committed collide
           with those from old->new.
+
+        o See ZODB/ConflictResolution.txt for details and dangers
         """
         # _p_resolveConflict is called with persistent state
         # we are operating against the PersistentMapping.__getstate__
@@ -70,13 +80,13 @@ class AppendOnlyDict(PersistentMapping):
             LOG.exception("Can't resolve 'clear'")
             raise ConflictError("Can't resolve 'clear'")
 
-        # save old state
-        old_log = pprint.pformat(old)
+        # save old state, messing with result_data overwrite state
+        log_rows = ["Conflicting insert"]
+        log_rows.extend(formatData(dict(old=old, committed=committed, new=new)))
 
         result = old.copy()
         c_new = {}
         result_data = result['data']
-        old_data = old['data']
 
         for k, v in committed['data'].items():
             if k not in result_data:
@@ -85,12 +95,19 @@ class AppendOnlyDict(PersistentMapping):
 
         for k, v in new['data'].items():
             if k in c_new:
-                rows = ["Conflicting insert", old_log]
-                for data in (committed, new, k, v, c_new, result):
-                    rows.append(pprint.pformat(data))
-                LOG.exception('\n----\n'.join(rows))
-                raise ConflictError("Conflicting insert")
-            if k in old_data:
+                try:
+                    neq = (v != result_data[k])
+                    # value is not the same -> raise ConflictError
+                except ValueError:
+                    # uncomparable PersistentReferences -> raise ConflictError
+                    neq = True
+                if neq:
+                    # log everything, debugging ConflictResolution is hard
+                    log_rows.extend(
+                        formatData(dict(k=k, v=v, c_new=c_new, result=result)))
+                    LOG.exception('\n----\n'.join(log_rows))
+                    raise ConflictError("Conflicting insert")
+            if k in result_data:
                 continue
             result_data[k] = v
 
@@ -103,9 +120,9 @@ class SessionData(data.SessionData):
     # parts/inspiration taken from repoze.session
 
     def _internalResolveConflict(self, resolved, old, committed, new):
-        msg = "Competing writes to session data: \n%s\n----\n%s" % (
-            pprint.pformat(committed['data']),
-            pprint.pformat(new['data']))
+        log_rows = ["Competing writes to session data:"]
+        log_rows.extend(formatData(dict(old=old, committed=committed, new=new)))
+        msg = "\n----\n".join(log_rows)
         LOG.exception(msg)
         raise ConflictError(msg)
 
@@ -121,6 +138,7 @@ class SessionData(data.SessionData):
             try:
                 neq = (committed['data'] != new['data'])
             except ValueError:
+                # uncomparable PersistentReferences? -> raise ConflictError
                 neq = True
             if neq:
                 # if it's a real conflict, raise ConflictError

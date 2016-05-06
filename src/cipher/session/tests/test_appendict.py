@@ -60,10 +60,23 @@ class ApppendOnlyDictTests(unittest.TestCase):
         # and the return value is ALSO persistent state
         return resolved
 
-    def test__p_resolveConflict_wo_collistions(self):
+    def test__p_resolveConflict_wo_collistions1(self):
         old = self._makeOne({'a': 'A', 'b': 'B'})
         committed = old.copy()
         committed['c'] = 'C'
+        new = old.copy()
+        new['d'] = 'D'
+
+        merged = old.copy()
+        merged.update(committed)
+        merged.update(new)
+
+        resolved = self._call_p_resolveConflict(old, committed, new)
+        self.assertEqual(resolved, merged.__getstate__())
+
+    def test__p_resolveConflict_wo_collistions2(self):
+        old = self._makeOne({'a': 'A', 'b': 'B'})
+        committed = old.copy()
         new = old.copy()
         new['d'] = 'D'
 
@@ -107,6 +120,40 @@ class ApppendOnlyDictTests(unittest.TestCase):
         new = old.copy()
         new['c'] = 'ccc'
         new['d'] = 'D'
+
+        with self.assertRaises(ConflictError):
+            self._call_p_resolveConflict(old, committed, new)
+
+    def test__p_resolveConflict_same_inserted(self):
+        old = self._makeOne(
+            {('sid_1', u'app.auth'): 'pers_repr_1',
+            })
+        committed = self._makeOne(
+            {('sid_1', u'app.auth'): 'pers_repr_1',
+             ('sid_2', u'app.auth'): 'pers_repr_2',
+             })
+        new = self._makeOne(
+            {('sid_1', u'app.auth'): 'pers_repr_1',
+             ('sid_2', u'app.auth'): 'pers_repr_2',
+             })
+
+        resolved = self._call_p_resolveConflict(old, committed, new)
+        self.assertEqual(resolved, new.__getstate__())
+
+    def test__p_resolveConflict_different_inserted(self):
+        from ZODB.POSException import ConflictError
+
+        old = self._makeOne(
+            {('sid_1', u'app.auth'): 'pers_repr_1',
+            })
+        committed = self._makeOne(
+            {('sid_1', u'app.auth'): 'pers_repr_1',
+             ('sid_2', u'app.auth'): 'pers_repr_2',
+             })
+        new = self._makeOne(
+            {('sid_1', u'app.auth'): 'pers_repr_1',
+             ('sid_2', u'app.auth'): 'pers_repr_3',
+             })
 
         with self.assertRaises(ConflictError):
             self._call_p_resolveConflict(old, committed, new)
