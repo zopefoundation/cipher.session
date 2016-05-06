@@ -70,6 +70,9 @@ class AppendOnlyDict(PersistentMapping):
             LOG.exception("Can't resolve 'clear'")
             raise ConflictError("Can't resolve 'clear'")
 
+        # save old state
+        old_log = pprint.pformat(old)
+
         result = old.copy()
         c_new = {}
         result_data = result['data']
@@ -82,8 +85,8 @@ class AppendOnlyDict(PersistentMapping):
 
         for k, v in new['data'].items():
             if k in c_new:
-                rows = ["Conflicting insert"]
-                for data in (old, committed, new, k, v, c_new):
+                rows = ["Conflicting insert", old_log]
+                for data in (committed, new, k, v, c_new, result):
                     rows.append(pprint.pformat(data))
                 LOG.exception('\n----\n'.join(rows))
                 raise ConflictError("Conflicting insert")
