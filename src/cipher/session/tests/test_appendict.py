@@ -38,7 +38,7 @@ class ApppendOnlyDictTests(unittest.TestCase):
         mutable = ['A', 'B']
         self.assertRaises(TypeError, aod.__setitem__, 'somekey', mutable)
 
-    def test___setitem__non_perssistent_inst_value_raises_TypeError(self):
+    def test___setitem__non_persistent_inst_value_raises_TypeError(self):
         aod = self._makeOne()
         class Mutable:
             pass
