@@ -14,7 +14,6 @@
 """Session handling
 """
 import logging
-import pprint
 
 import zope.interface
 import zope.component
@@ -35,12 +34,10 @@ from cipher.session._compat import PY3
 LOG = logging.getLogger('cipher.session.session')
 
 
-def formatData(inData):
-    log_rows = []
-    for name, data in sorted(inData.items()):
-        log_rows.append(name)
-        log_rows.append(pprint.pformat(data))
-    return log_rows
+def formatExtraData(extra, **inData):
+    for name, data in inData.items():
+        extra[name] = repr(data)
+    return extra
 
 
 class AppendOnlyDict(PersistentMapping):
@@ -81,8 +78,8 @@ class AppendOnlyDict(PersistentMapping):
             raise ConflictError("Can't resolve 'clear'")
 
         # save old state, messing with result_data overwrite state
-        log_rows = ["Conflicting insert"]
-        log_rows.extend(formatData(dict(old=old, committed=committed, new=new)))
+        extra = {}
+        formatExtraData(extra, old=old, committed=committed, new=new)
 
         result = old.copy()
         c_new = {}
@@ -103,9 +100,8 @@ class AppendOnlyDict(PersistentMapping):
                     neq = True
                 if neq:
                     # log everything, debugging ConflictResolution is hard
-                    log_rows.extend(
-                        formatData(dict(k=k, v=v, c_new=c_new, result=result)))
-                    LOG.exception('\n----\n'.join(log_rows))
+                    formatExtraData(extra, k=k, v=v, c_new=c_new, result=result)
+                    LOG.exception("Conflicting insert", extra=extra)
                     raise ConflictError("Conflicting insert")
             if k in result_data:
                 continue
@@ -120,11 +116,10 @@ class SessionData(data.SessionData):
     # parts/inspiration taken from repoze.session
 
     def _internalResolveConflict(self, resolved, old, committed, new):
-        log_rows = ["Competing writes to session data:"]
-        log_rows.extend(formatData(dict(old=old, committed=committed, new=new)))
-        msg = "\n----\n".join(log_rows)
-        LOG.exception(msg)
-        raise ConflictError(msg)
+        extra = {}
+        formatExtraData(extra, old=old, committed=committed, new=new)
+        LOG.exception("Competing writes to session data:", extra=extra)
+        raise ConflictError("Competing writes to session data:")
 
     def _p_resolveConflict(self, old, committed, new):
         # dict modifiers set '_lm'.
