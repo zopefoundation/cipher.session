@@ -74,7 +74,7 @@ class AppendOnlyDict(PersistentMapping):
         # we are operating against the PersistentMapping.__getstate__
         # representation, which aliases '_container' to self.data.
         if not committed['data'] or not new['data']:
-            LOG.exception("Can't resolve 'clear'")
+            LOG.error("Can't resolve 'clear'")
             raise ConflictError("Can't resolve 'clear'")
 
         # save old state, messing with result_data overwrite state
@@ -101,7 +101,7 @@ class AppendOnlyDict(PersistentMapping):
                 if neq:
                     # log everything, debugging ConflictResolution is hard
                     formatExtraData(extra, k=k, v=v, c_new=c_new, result=result)
-                    LOG.exception("Conflicting insert", extra=extra)
+                    LOG.error("Conflicting insert", extra=extra)
                     raise ConflictError("Conflicting insert")
             if k in result_data:
                 continue
@@ -118,7 +118,7 @@ class SessionData(data.SessionData):
     def _internalResolveConflict(self, resolved, old, committed, new):
         extra = {}
         formatExtraData(extra, old=old, committed=committed, new=new)
-        LOG.exception("Competing writes to session data:", extra=extra)
+        LOG.error("Competing writes to session data:", extra=extra)
         raise ConflictError("Competing writes to session data:")
 
     def _p_resolveConflict(self, old, committed, new):
