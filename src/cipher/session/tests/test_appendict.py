@@ -158,6 +158,43 @@ class ApppendOnlyDictTests(unittest.TestCase):
         with self.assertRaises(ConflictError):
             self._call_p_resolveConflict(old, committed, new)
 
+    def test__p_resolveConflict_fail_cmp(self):
+        from ZODB.POSException import ConflictError
+
+        old = self._makeOne(
+            {('sid_1', u'app.auth'): PersistentReferenceStub('PR1'),
+            })
+        committed = self._makeOne(
+            {('sid_1', u'app.auth'): PersistentReferenceStub('PR1'),
+             ('sid_2', u'app.auth'): PersistentReferenceStub('PR2'),
+             })
+        new = self._makeOne(
+            {('sid_1', u'app.auth'): PersistentReferenceStub('PR1'),
+             ('sid_2', u'app.auth'): PersistentReferenceStub('PR3'),
+             })
+
+        with self.assertRaises(ConflictError):
+            self._call_p_resolveConflict(old, committed, new)
+
+
+class PersistentReferenceStub(object):
+    def __init__(self, data):
+        self.data = data
+
+    def __ne__(self, other):
+        return self.__cmp__(other) != 0
+
+    def __cmp__(self, other):
+        if self.data == other.data:
+            return 0
+        else:
+            raise ValueError(
+                "can't reliably compare against different "
+                "PersistentReferences")
+
+    def __repr__(self):
+        return "PR(%s %s)" % (id(self), self.data)
+
 
 def test_suite():
     return unittest.TestSuite((
