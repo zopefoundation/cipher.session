@@ -93,7 +93,8 @@ class AppendOnlyDict(PersistentMapping):
         for k, v in new['data'].items():
             if k in c_new:
                 try:
-                    neq = (v != result_data[k])
+                    rdata_k = result_data[k]
+                    neq = (v != rdata_k)
                     # value is not the same -> raise ConflictError
                 except ValueError:
                     # uncomparable PersistentReferences -> raise ConflictError
