@@ -93,15 +93,18 @@ class AppendOnlyDict(PersistentMapping):
         for k, v in new['data'].items():
             if k in c_new:
                 try:
+                    verror = False
                     rdata_k = result_data[k]
                     neq = (v != rdata_k)
                     # value is not the same -> raise ConflictError
                 except ValueError:
                     # uncomparable PersistentReferences -> raise ConflictError
                     neq = True
+                    verror = True
                 if neq:
                     # log everything, debugging ConflictResolution is hard
-                    formatExtraData(extra, k=k, v=v, c_new=c_new, result=result)
+                    formatExtraData(extra, k=k, v=v, c_new=c_new, result=result,
+                                    rdata_k=rdata_k, verror=verror)
                     LOG.error("Conflicting insert", extra=extra)
                     raise ConflictError("Conflicting insert")
             if k in result_data:
