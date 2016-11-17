@@ -105,7 +105,7 @@ class AppendOnlyDict(PersistentMapping):
                     # log everything, debugging ConflictResolution is hard
                     formatExtraData(extra, k=k, v=v, c_new=c_new, result=result,
                                     rdata_k=rdata_k, verror=verror)
-                    LOG.error("Conflicting insert", extra=extra)
+                    LOG.warn("Conflicting insert", extra=extra)
                     raise ConflictError("Conflicting insert")
             if k in result_data:
                 continue
