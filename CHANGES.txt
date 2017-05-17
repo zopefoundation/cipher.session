@@ -2,11 +2,10 @@
 CHANGES
 =======
 
-2.1.1 (unreleased)
-------------------
+sbx.2.1.0 (unreleased)
+----------------------
 
-- Nothing changed yet.
-
+- Several improvements.
 
 2.1.0 (2016-04-18)
 ------------------
