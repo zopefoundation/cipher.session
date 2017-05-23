@@ -37,7 +37,7 @@ def alltests():
 
 setup(
     name='cipher.session',
-    version='sbx.2.1.1.dev8',
+    version='2.2.0.dev8',
     url="http://pypi.python.org/pypi/cipher.session/",
     author='Zope Foundation and Contributors',
     author_email='zope-dev@zope.org',
@@ -55,10 +55,7 @@ setup(
         'Intended Audience :: Developers',
         'Programming Language :: Python',
         'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: Implementation :: CPython',
         'Natural Language :: English',
         'Operating System :: OS Independent',
@@ -88,7 +85,6 @@ setup(
         'zope.session',
         'zope.location',
         'zope.publisher',
-        'repoze.session',
 
     ],
     tests_require = [

@@ -2,10 +2,17 @@
 CHANGES
 =======
 
-sbx.2.1.0 (unreleased)
-----------------------
+3.0.0 (unreleased)
+------------------
 
-- Several improvements.
+- Dropped support for Python 3, since repoze.session is not
+  maintained anymore. At this point, this package is also going into
+  maintainance-only mode.
+
+- Dropped support for Python 2.6.
+
+- Fine-tune logging.
+
 
 2.1.0 (2016-04-18)
 ------------------
