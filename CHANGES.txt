@@ -2,7 +2,7 @@
 CHANGES
 =======
 
-3.0.0 (unreleased)
+3.0.0 (2017-05-23)
 ------------------
 
 - Dropped support for Python 3, since repoze.session is not
