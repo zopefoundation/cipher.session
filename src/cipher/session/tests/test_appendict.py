@@ -38,7 +38,7 @@ class ApppendOnlyDictTests(unittest.TestCase):
         mutable = ['A', 'B']
         self.assertRaises(TypeError, aod.__setitem__, 'somekey', mutable)
 
-    def test___setitem__non_perssistent_inst_value_raises_TypeError(self):
+    def test___setitem__non_persistent_inst_value_raises_TypeError(self):
         aod = self._makeOne()
         class Mutable:
             pass
@@ -60,10 +60,23 @@ class ApppendOnlyDictTests(unittest.TestCase):
         # and the return value is ALSO persistent state
         return resolved
 
-    def test__p_resolveConflict_wo_collistions(self):
+    def test__p_resolveConflict_wo_collistions1(self):
         old = self._makeOne({'a': 'A', 'b': 'B'})
         committed = old.copy()
         committed['c'] = 'C'
+        new = old.copy()
+        new['d'] = 'D'
+
+        merged = old.copy()
+        merged.update(committed)
+        merged.update(new)
+
+        resolved = self._call_p_resolveConflict(old, committed, new)
+        self.assertEqual(resolved, merged.__getstate__())
+
+    def test__p_resolveConflict_wo_collistions2(self):
+        old = self._makeOne({'a': 'A', 'b': 'B'})
+        committed = old.copy()
         new = old.copy()
         new['d'] = 'D'
 
@@ -110,6 +123,77 @@ class ApppendOnlyDictTests(unittest.TestCase):
 
         with self.assertRaises(ConflictError):
             self._call_p_resolveConflict(old, committed, new)
+
+    def test__p_resolveConflict_same_inserted(self):
+        old = self._makeOne(
+            {('sid_1', u'app.auth'): 'pers_repr_1',
+            })
+        committed = self._makeOne(
+            {('sid_1', u'app.auth'): 'pers_repr_1',
+             ('sid_2', u'app.auth'): 'pers_repr_2',
+             })
+        new = self._makeOne(
+            {('sid_1', u'app.auth'): 'pers_repr_1',
+             ('sid_2', u'app.auth'): 'pers_repr_2',
+             })
+
+        resolved = self._call_p_resolveConflict(old, committed, new)
+        self.assertEqual(resolved, new.__getstate__())
+
+    def test__p_resolveConflict_different_inserted(self):
+        from ZODB.POSException import ConflictError
+
+        old = self._makeOne(
+            {('sid_1', u'app.auth'): 'pers_repr_1',
+            })
+        committed = self._makeOne(
+            {('sid_1', u'app.auth'): 'pers_repr_1',
+             ('sid_2', u'app.auth'): 'pers_repr_2',
+             })
+        new = self._makeOne(
+            {('sid_1', u'app.auth'): 'pers_repr_1',
+             ('sid_2', u'app.auth'): 'pers_repr_3',
+             })
+
+        with self.assertRaises(ConflictError):
+            self._call_p_resolveConflict(old, committed, new)
+
+    def test__p_resolveConflict_fail_cmp(self):
+        from ZODB.POSException import ConflictError
+
+        old = self._makeOne(
+            {('sid_1', u'app.auth'): PersistentReferenceStub('PR1'),
+            })
+        committed = self._makeOne(
+            {('sid_1', u'app.auth'): PersistentReferenceStub('PR1'),
+             ('sid_2', u'app.auth'): PersistentReferenceStub('PR2'),
+             })
+        new = self._makeOne(
+            {('sid_1', u'app.auth'): PersistentReferenceStub('PR1'),
+             ('sid_2', u'app.auth'): PersistentReferenceStub('PR3'),
+             })
+
+        with self.assertRaises(ConflictError):
+            self._call_p_resolveConflict(old, committed, new)
+
+
+class PersistentReferenceStub(object):
+    def __init__(self, data):
+        self.data = data
+
+    def __ne__(self, other):
+        return self.__cmp__(other) != 0
+
+    def __cmp__(self, other):
+        if self.data == other.data:
+            return 0
+        else:
+            raise ValueError(
+                "can't reliably compare against different "
+                "PersistentReferences")
+
+    def __repr__(self):
+        return "PR(%s %s)" % (id(self), self.data)
 
 
 def test_suite():

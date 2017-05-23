@@ -13,7 +13,7 @@
 ##############################################################################
 """Session handling
 """
-import pprint
+import logging
 
 import zope.interface
 import zope.component
@@ -30,6 +30,14 @@ from repoze.session import manager
 
 from cipher.session import interfaces
 from cipher.session._compat import PY3
+
+LOG = logging.getLogger('cipher.session.session')
+
+
+def formatExtraData(extra, **inData):
+    for name, data in inData.items():
+        extra[name] = repr(data)
+    return extra
 
 
 class AppendOnlyDict(PersistentMapping):
@@ -59,17 +67,23 @@ class AppendOnlyDict(PersistentMapping):
 
         o Raise ConflictError if deltas from old to old->committed collide
           with those from old->new.
+
+        o See ZODB/ConflictResolution.txt for details and dangers
         """
         # _p_resolveConflict is called with persistent state
         # we are operating against the PersistentMapping.__getstate__
         # representation, which aliases '_container' to self.data.
         if not committed['data'] or not new['data']:
+            LOG.error("Can't resolve 'clear'")
             raise ConflictError("Can't resolve 'clear'")
+
+        # save old state, messing with result_data overwrite state
+        extra = {}
+        formatExtraData(extra, old=old, committed=committed, new=new)
 
         result = old.copy()
         c_new = {}
         result_data = result['data']
-        old_data = old['data']
 
         for k, v in committed['data'].items():
             if k not in result_data:
@@ -78,8 +92,22 @@ class AppendOnlyDict(PersistentMapping):
 
         for k, v in new['data'].items():
             if k in c_new:
-                raise ConflictError("Conflicting insert")
-            if k in old_data:
+                try:
+                    verror = False
+                    rdata_k = result_data[k]
+                    neq = (v != rdata_k)
+                    # value is not the same -> raise ConflictError
+                except ValueError:
+                    # uncomparable PersistentReferences -> raise ConflictError
+                    neq = True
+                    verror = True
+                if neq:
+                    # log everything, debugging ConflictResolution is hard
+                    formatExtraData(extra, k=k, v=v, c_new=c_new, result=result,
+                                    rdata_k=rdata_k, verror=verror)
+                    LOG.error("Conflicting insert", extra=extra)
+                    raise ConflictError("Conflicting insert")
+            if k in result_data:
                 continue
             result_data[k] = v
 
@@ -91,37 +119,31 @@ class SessionData(data.SessionData):
     # ZODB conflict resolution (to prevent write conflicts)
     # parts/inspiration taken from repoze.session
 
-    def _getData(self, state):
-        # happens that PersistentMapping was refactored to 'data' instead
-        # of '_container', be forgiving about which item we use
-        try:
-            return state['_container']
-        except KeyError:
-            return state['data']
+    def _internalResolveConflict(self, resolved, old, committed, new):
+        extra = {}
+        formatExtraData(extra, old=old, committed=committed, new=new)
+        LOG.error("Competing writes to session data:", extra=extra)
+        raise ConflictError("Competing writes to session data:")
 
     def _p_resolveConflict(self, old, committed, new):
         # dict modifiers set '_lm'.
+        resolved = dict(new)
         if committed['_lm'] != new['_lm']:
             # we are operating against the PersistentMapping.__getstate__
-            # representation, which aliases '_container' to self.data.
 
             # for this to work perfectly, you better put comparable items
             # into the session
             # if they don't compare naturally, add a __cmp__ method
-            cd = self._getData(committed)
-            nd = self._getData(new)
-
             try:
-                neq = (cd != nd)
+                neq = (committed['data'] != new['data'])
             except ValueError:
+                # uncomparable PersistentReferences? -> raise ConflictError
                 neq = True
             if neq:
-                msg = "Competing writes to session data: \n%s\n----\n%s" % (
-                        pprint.pformat(cd),
-                        pprint.pformat(nd))
-                raise ConflictError(msg)
+                # if it's a real conflict, raise ConflictError
+                # otherwise update the resolved dict with good values
+                self._internalResolveConflict(resolved, old, committed, new)
 
-        resolved = dict(new)
         invalid = committed.get('_iv') or new.get('_iv')
         if invalid:
             resolved['_iv'] = True
