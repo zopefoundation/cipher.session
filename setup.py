@@ -37,7 +37,7 @@ def alltests():
 
 setup(
     name='cipher.session',
-    version='2.2.0.dev8',
+    version='3.0.0.dev8',
     url="http://pypi.python.org/pypi/cipher.session/",
     author='Zope Foundation and Contributors',
     author_email='zope-dev@zope.org',
@@ -79,13 +79,13 @@ setup(
                 ]
     ),
     install_requires=[
+        'repoze.session',
         'setuptools',
         'zope.interface',
         'zope.component',
         'zope.session',
         'zope.location',
         'zope.publisher',
-
     ],
     tests_require = [
         'zope.testing',
